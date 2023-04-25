@@ -1,0 +1,9 @@
+[package]
+name = "kernel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+uefi = "0.20"
+uefi-services = "0.17"
+log = "0.4"
