@@ -26,7 +26,6 @@ version = "0.1.0"
 dependencies = [
  "log",
  "uefi",
- "uefi-services",
 ]
 
 [[package]]
@@ -118,17 +117,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "uefi-services"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42d8ffbcc532083312224b4540737c1102ede6a81360fa9320a60deff329a3a1"
-dependencies = [
- "cfg-if",
- "log",
- "uefi",
 ]
 
 [[package]]
