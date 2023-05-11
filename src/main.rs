@@ -6,7 +6,9 @@ extern crate alloc;
 
 mod allocator;
 mod disk;
+mod guid;
 mod logger;
+mod partitions;
 
 static mut SYSTEM_TABLE: Option<uefi::table::SystemTable<uefi::table::Boot>> = None;
 
@@ -28,11 +30,7 @@ fn main(_image_handle: uefi::Handle, system_table: uefi::table::SystemTable<uefi
             Some(sector_count) => {
                 log::debug!("Disk {:?}: {} sectors", device, sector_count);
                 log::debug!("{}", pretty_hex::pretty_hex(&&disk::read_sector(device, 1)[..128]));
-                let mut sector_data = disk::read_sector(device, 0);
-                sector_data[0] = 0x12;
-                sector_data[1] = 0x34;
-                sector_data[2] = 0x56;
-                disk::write_sector(device, 0, sector_data);
+                log::debug!("{:?}", partitions::read_partition_table(device));
             }
         }
     }

@@ -9,7 +9,7 @@ unsafe impl GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         // `allocate_pool` is only guaranteed to provide 8-byte alignment, so allocate extra space to align and to put the original pointer.
         let align = max(layout.align(), core::mem::size_of::<*mut u8>());
-        match crate::SYSTEM_TABLE
+        match super::SYSTEM_TABLE
             .as_ref()
             .unwrap()
             .boot_services()
@@ -26,7 +26,7 @@ unsafe impl GlobalAlloc for Allocator {
 
     unsafe fn dealloc(&self, aligned_ptr: *mut u8, _layout: Layout) {
         let ptr = (aligned_ptr as *mut *mut u8).sub(1).read();
-        crate::SYSTEM_TABLE.as_ref().unwrap().boot_services().free_pool(ptr).unwrap();
+        super::SYSTEM_TABLE.as_ref().unwrap().boot_services().free_pool(ptr).unwrap();
     }
 }
 

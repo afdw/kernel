@@ -48,7 +48,7 @@ pub(crate) use dbg;
 fn panic_handler(panic_info: &core::panic::PanicInfo) -> ! {
     use uefi::proto::console::text::Color;
     unsafe {
-        crate::SYSTEM_TABLE.as_mut().unwrap().stdout().set_color(Color::Black, Color::Red).unwrap();
+        super::SYSTEM_TABLE.as_mut().unwrap().stdout().set_color(Color::Black, Color::Red).unwrap();
     }
     println!("[PANIC] {}", panic_info);
     loop {}
@@ -64,7 +64,7 @@ impl log::Log for Logger {
     fn log(&self, record: &log::Record) {
         use uefi::proto::console::text::Color;
         unsafe {
-            crate::SYSTEM_TABLE
+            super::SYSTEM_TABLE
                 .as_mut()
                 .unwrap()
                 .stdout()

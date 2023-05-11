@@ -1,4 +1,4 @@
-const SECTOR_SIZE: usize = 512;
+pub const SECTOR_SIZE: usize = 512;
 
 const PORT_BASE_CONTROL_PRIMARY: u16 = 0x3F6;
 const PORT_BASE_CONTROL_SECONDARY: u16 = 0x376;
@@ -86,13 +86,14 @@ pub fn identify(device: Device) -> Option<u64> {
             if status & STATUS_BIT_ERR != 0 || status & STATUS_BIT_DRQ == 0 {
                 return None; // probably not an ATA drive
             }
-            let mut identify_data: [u16; SECTOR_SIZE / 2] = [0; SECTOR_SIZE / 2];
-            for i in 0..SECTOR_SIZE / 2 {
-                identify_data[i] = x86::io::inw(device.port_base_io() + PORT_OFFSET_DATA);
-            }
-            assert!(identify_data[83] & (1 << 10) != 0); // LBA48 mode is supported
-            return Some(u64::from_le_bytes(bytemuck::cast_slice(&identify_data[100..104]).try_into().unwrap()));
+            break;
         }
+        let mut identify_data: [u16; SECTOR_SIZE / 2] = [0; SECTOR_SIZE / 2];
+        for word in identify_data.iter_mut() {
+            *word = x86::io::inw(device.port_base_io() + PORT_OFFSET_DATA);
+        }
+        assert!(identify_data[83] & (1 << 10) != 0); // LBA48 mode is supported
+        return Some(u64::from_le_bytes(bytemuck::cast_slice(&identify_data[100..104]).try_into().unwrap()));
     }
 }
 
@@ -110,18 +111,22 @@ pub fn read_sector(device: Device, sector_index: u64) -> [u8; SECTOR_SIZE] {
         x86::io::outb(device.port_base_io() + PORT_OFFSET_CYLINDER_LOW, sector_index_bytes[1]);
         x86::io::outb(device.port_base_io() + PORT_OFFSET_CYLINDER_HIGH, sector_index_bytes[2]);
         x86::io::outb(device.port_base_io() + PORT_OFFSET_COMMAND, COMMAND_READ_SECTORS_EXT);
+        for _ in 0..15 {
+            x86::io::inb(device.port_base_io() + PORT_OFFSET_STATUS);
+        }
         loop {
             let status = x86::io::inb(device.port_base_io() + PORT_OFFSET_STATUS);
             if status & STATUS_BIT_BSY != 0 {
                 continue;
             }
             assert!(status & STATUS_BIT_ERR == 0 && status & STATUS_BIT_DRQ != 0);
-            let mut sector_data: [u16; SECTOR_SIZE / 2] = [0; SECTOR_SIZE / 2];
-            for i in 0..SECTOR_SIZE / 2 {
-                sector_data[i] = x86::io::inw(device.port_base_io() + PORT_OFFSET_DATA);
-            }
-            return bytemuck::cast_slice(&sector_data).try_into().unwrap();
+            break;
         }
+        let mut sector_data: [u16; SECTOR_SIZE / 2] = [0; SECTOR_SIZE / 2];
+        for word in sector_data.iter_mut() {
+            *word = x86::io::inw(device.port_base_io() + PORT_OFFSET_DATA);
+        }
+        return bytemuck::cast_slice(&sector_data).try_into().unwrap();
     }
 }
 
@@ -140,16 +145,19 @@ pub fn write_sector(device: Device, sector_index: u64, sector_data: [u8; SECTOR_
         x86::io::outb(device.port_base_io() + PORT_OFFSET_CYLINDER_LOW, sector_index_bytes[1]);
         x86::io::outb(device.port_base_io() + PORT_OFFSET_CYLINDER_HIGH, sector_index_bytes[2]);
         x86::io::outb(device.port_base_io() + PORT_OFFSET_COMMAND, COMMAND_WRITE_SECTORS_EXT);
+        for _ in 0..15 {
+            x86::io::inb(device.port_base_io() + PORT_OFFSET_STATUS);
+        }
         loop {
             let status = x86::io::inb(device.port_base_io() + PORT_OFFSET_STATUS);
             if status & STATUS_BIT_BSY != 0 {
                 continue;
             }
             assert!(status & STATUS_BIT_ERR == 0 && status & STATUS_BIT_DRQ != 0);
-            for i in 0..SECTOR_SIZE / 2 {
-                x86::io::outw(device.port_base_io() + PORT_OFFSET_DATA, sector_data[i]);
-            }
             break;
+        }
+        for word in sector_data {
+            x86::io::outw(device.port_base_io() + PORT_OFFSET_DATA, word);
         }
         x86::io::outb(device.port_base_io() + PORT_OFFSET_DRIVE_HEAD, device.device_bit() << 4);
         x86::io::outb(device.port_base_io() + PORT_OFFSET_COMMAND, COMMAND_FLUSH_CACHE);

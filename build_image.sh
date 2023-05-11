@@ -14,7 +14,7 @@ done
 ((!$fast)) && sfdisk -q image.img <<EOF
 label: gpt
 start=-, size=16MiB, bootable, type=uefi
-start=-, size=+, type=linux
+start=-, size=+, name=kernel_root, type=linux
 EOF
 mkdir mnt
 loop_device=$(sudo losetup -f --show -P image.img)
