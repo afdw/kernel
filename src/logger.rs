@@ -50,7 +50,7 @@ fn panic_handler(panic_info: &core::panic::PanicInfo) -> ! {
     unsafe {
         crate::SYSTEM_TABLE.as_mut().unwrap().stdout().set_color(Color::Black, Color::Red).unwrap();
     }
-    println!("[PANIC]: {}", panic_info);
+    println!("[PANIC] {}", panic_info);
     loop {}
 }
 

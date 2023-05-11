@@ -18,7 +18,7 @@ unsafe impl GlobalAlloc for Allocator {
             Ok(ptr) => {
                 let aligned_ptr = ptr.add(ptr.align_offset(align)).add(align);
                 (aligned_ptr as *mut *mut u8).sub(1).write(ptr);
-                aligned_ptr.add(align)
+                aligned_ptr
             }
             _ => core::ptr::null_mut(),
         }

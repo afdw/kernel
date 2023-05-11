@@ -5,6 +5,7 @@
 extern crate alloc;
 
 mod allocator;
+mod disk;
 mod logger;
 
 static mut SYSTEM_TABLE: Option<uefi::table::SystemTable<uefi::table::Boot>> = None;
@@ -16,9 +17,25 @@ fn main(_image_handle: uefi::Handle, system_table: uefi::table::SystemTable<uefi
     }
     logger::init();
     log::info!("Hello world!");
-    let v = alloc::vec![1, 2, 3];
-    log::debug!("{:p}", &v);
-    logger::dbg!(v.iter().sum::<i32>());
-    system_table.boot_services().stall(10_000_000);
+    for device in [
+        disk::Device::PrimaryMaster,
+        disk::Device::PrimarySlave,
+        disk::Device::SecondaryMaster,
+        disk::Device::SecondarySlave,
+    ] {
+        match disk::identify(device) {
+            None => log::debug!("Disk {:?}: none", device),
+            Some(sector_count) => {
+                log::debug!("Disk {:?}: {} sectors", device, sector_count);
+                log::debug!("{}", pretty_hex::pretty_hex(&&disk::read_sector(device, 1)[..128]));
+                let mut sector_data = disk::read_sector(device, 0);
+                sector_data[0] = 0x12;
+                sector_data[1] = 0x34;
+                sector_data[2] = 0x56;
+                disk::write_sector(device, 0, sector_data);
+            }
+        }
+    }
+    system_table.boot_services().stall(100_000_000);
     uefi::Status::SUCCESS
 }
