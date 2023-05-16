@@ -1,11 +1,16 @@
 #/usr/bin/bash
 
 fast=0
+export_root=0
 
 while getopts "f" opt; do
   case "$opt" in
     f)
       fast=1
+      ;;
+    r)
+      export_root=1
+      ;;
   esac
 done
 
@@ -27,5 +32,6 @@ sudo umount mnt
 ((!$fast)) && sudo mount ${loop_device}p2 mnt
 ((!$fast)) && sudo tee -a mnt/example <<< text > /dev/null
 ((!$fast)) && sudo umount mnt
+((!$export_root)) && sudo dd if=${loop_device}p2 of=kernel_root.img bs=64K status=none
 sudo losetup -D $loop_device
 rmdir mnt

@@ -6,14 +6,17 @@ pub fn _print(args: core::fmt::Arguments) {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! print {
     ($($arg:tt)*) => {{
         $crate::logger::_print(core::format_args!($($arg)*));
     }};
 }
 
+#[allow(unused_imports)]
 pub(crate) use print;
 
+#[allow(unused_macros)]
 macro_rules! println {
     () => {
         $crate::logger::print!("\n")
@@ -23,8 +26,10 @@ macro_rules! println {
     }};
 }
 
+#[allow(unused_imports)]
 pub(crate) use println;
 
+#[allow(unused_macros)]
 macro_rules! dbg {
     () => {
         log::debug!("")
@@ -42,6 +47,7 @@ macro_rules! dbg {
     };
 }
 
+#[allow(unused_imports)]
 pub(crate) use dbg;
 
 #[panic_handler]
