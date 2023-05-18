@@ -1,32 +1,5 @@
-cargo-features = ["per-package-target"]
-
 [workspace]
 members = [
+    "kernel",
     "inline_debug_info",
 ]
-
-[package]
-name = "kernel"
-version = "0.1.0"
-edition = "2021"
-forced-target = "x86_64-unknown-uefi"
-
-[dependencies]
-x86 = "0.52.0"
-uefi = "0.21.0"
-log = "0.4"
-bytemuck = "1.13.1"
-pretty-hex = "0.3.0"
-acid_io = { git = "https://github.com/dataphract/acid_io", rev = "2d549317fe9253df8b510ba6bbdcfe623a837286", features = ["byteorder"] }
-bitflags = "2.2.1"
-gimli = { version = "0.27.2", default-features = false, features = ["read", "endian-reader"] }
-object = { version = "0.31.1", default-features = false, features = ["read", "pe"] }
-serde = { version = "1.0.163", default-features = false, features = ["alloc", "derive"] }
-serde_json = { version = "1.0.96", default-features = false, features = ["alloc"] }
-stable_deref_trait = { version = "1.2.0", default-features = false, features = ["alloc"] }
-addr2line = { version = "0.20.0", default-features = false, features = ["object"] }
-
-[[bin]]
-name = "kernel"
-test = false
-bench = false

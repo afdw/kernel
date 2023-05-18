@@ -59,9 +59,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
-version = "2.2.1"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24a6904aef64d73cf10ab17ebace7befb918b82164785cb89907993be7f83813"
+checksum = "6776fc96284a0bb647b615056fc496d1fe1644a7ab01829818a6d91cae888b84"
 
 [[package]]
 name = "bytemuck"
@@ -192,7 +192,7 @@ version = "0.1.0"
 dependencies = [
  "acid_io",
  "addr2line",
- "bitflags 2.2.1",
+ "bitflags 2.3.1",
  "bytemuck",
  "gimli",
  "log",
@@ -479,7 +479,7 @@ version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b568c22d9ed54fb8695eff4252975063a3fa20281049df911d0237b44b86b6a"
 dependencies = [
- "bitflags 2.2.1",
+ "bitflags 2.3.1",
  "derive_more",
  "log",
  "ptr_meta",
@@ -506,7 +506,7 @@ version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d5b1c8cd8a8a201bcc0d132f8367f5cb7c38c99a5debe304392d379963776d5"
 dependencies = [
- "bitflags 2.2.1",
+ "bitflags 2.3.1",
  "ptr_meta",
  "uguid",
 ]

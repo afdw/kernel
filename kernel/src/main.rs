@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 
 use sector_storage::SectorStorage;
 
-include!("../inline_debug_info/src/structures.rs");
+include!("../../inline_debug_info/src/structures.rs");
 
 static mut SYSTEM_TABLE: Option<uefi::table::SystemTable<uefi::table::Boot>> = None;
 static mut DEBUG_INFO: Option<DebugInfo> = None;
