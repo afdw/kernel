@@ -15,10 +15,7 @@ pub trait SectorStorage {
 
     fn read_aligned(&self, start: u64, len: u64) -> Vec<u8> {
         assert!(start % SECTOR_SIZE == 0 && len % SECTOR_SIZE == 0);
-        (0..len / SECTOR_SIZE)
-            .map(|index| self.read_sector(start / SECTOR_SIZE + index))
-            .flatten()
-            .collect()
+        (0..len / SECTOR_SIZE).flat_map(|index| self.read_sector(start / SECTOR_SIZE + index)).collect()
     }
 
     fn write_aligned(&self, start: u64, data: &[u8]) {

@@ -15,5 +15,5 @@ impl Guid {
     }
 }
 
-pub const ZERO: Guid = Guid(uefi::data_types::Guid::from_values(0, 0, 0, 0, 0));
-pub const TYPE_ID_LINUX: Guid = Guid(uefi::data_types::Guid::from_values(0x0FC63DAF, 0x8483, 0x4772, 0x8E79, 0x3D69D8477DE4));
+pub const ZERO: Guid = Guid(uefi::data_types::Guid::ZERO);
+pub const TYPE_ID_LINUX: Guid = Guid(uefi::data_types::Guid::parse_or_panic("0FC63DAF-8483-4772-8E79-3D69D8477DE4"));

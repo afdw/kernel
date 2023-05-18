@@ -232,12 +232,14 @@ impl<'ss, SS: SectorStorage> Mounted<'ss, SS> {
     }
 
     fn block_group_index_contains_superblock_copies(&self, block_group_index: u64) -> bool {
-        return block_group_index == 0
+        !self.superblock.features_ro_compat.contains(FeaturesRoCompat::SPARSE_SUPER)
+            || block_group_index == 0
             || [3, 5, 7]
                 .into_iter()
-                .any(|base: u64| base.pow(block_group_index.ilog(base)) == block_group_index);
+                .any(|base: u64| base.pow(block_group_index.ilog(base)) == block_group_index)
     }
 
+    #[allow(clippy::iter_nth_zero)]
     pub fn write_superblock_copies(&self) {
         for (block_group_index, block_group_range) in self.block_group_ranges().enumerate() {
             let block_group_index = block_group_index as u64;

@@ -3,3 +3,4 @@
 /target
 /snapshots.qcow2
 /image.img
+/kernel_root.img
