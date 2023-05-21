@@ -4,22 +4,23 @@ cargo-features = ["per-package-target"]
 name = "kernel"
 version = "0.1.0"
 edition = "2021"
-forced-target = "x86_64-unknown-uefi"
+forced-target = "x86_64-unknown-none"
 
 [dependencies]
 x86 = "0.52.0"
 uefi = "0.21.0"
+spin = "0.9.8"
 log = "0.4"
 bytemuck = "1.13.1"
 pretty-hex = "0.3.0"
 acid_io = { git = "https://github.com/dataphract/acid_io", rev = "2d549317fe9253df8b510ba6bbdcfe623a837286", features = ["byteorder"] }
 bitflags = "2.2.1"
-gimli = { version = "0.27.2", default-features = false, features = ["read", "endian-reader"] }
-object = { version = "0.31.1", default-features = false, features = ["read", "pe"] }
-serde = { version = "1.0.163", default-features = false, features = ["alloc", "derive"] }
-serde_json = { version = "1.0.96", default-features = false, features = ["alloc"] }
 stable_deref_trait = { version = "1.2.0", default-features = false, features = ["alloc"] }
+object = { version = "0.31.1", default-features = false, features = ["read"] }
+gimli = { version = "0.27.2", default-features = false, features = ["read", "endian-reader"] }
+unwinding = { version = "0.1.7", default-features = false, features = ["unwinder", "fde-static", "dwarf-expr", "personality", "panicking"] }
 addr2line = { version = "0.20.0", default-features = false, features = ["object"] }
+rustc-demangle = "0.1.23"
 
 [[bin]]
 name = "kernel"

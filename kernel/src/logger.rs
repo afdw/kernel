@@ -50,16 +50,6 @@ macro_rules! dbg {
 #[allow(unused_imports)]
 pub(crate) use dbg;
 
-#[panic_handler]
-fn panic_handler(panic_info: &core::panic::PanicInfo) -> ! {
-    use uefi::proto::console::text::Color;
-    unsafe {
-        super::SYSTEM_TABLE.as_mut().unwrap().stdout().set_color(Color::Black, Color::Red).unwrap();
-    }
-    println!("[PANIC] {}", panic_info);
-    loop {}
-}
-
 struct Logger;
 
 impl log::Log for Logger {

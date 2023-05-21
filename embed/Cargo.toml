@@ -1,0 +1,8 @@
+[package]
+name = "embed"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+object = "0.31.1"
+pdb = "0.8.0"
