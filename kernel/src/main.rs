@@ -35,7 +35,6 @@ fn main(image_handle: uefi::Handle, system_table: uefi::table::SystemTable<uefi:
         SYSTEM_TABLE = Some(system_table.unsafe_clone());
     }
     logger::init();
-    log::info!("Hello world!");
     BOOTLOADER_PROTOCOL.call_once(|| {
         *system_table
             .boot_services()
@@ -43,6 +42,13 @@ fn main(image_handle: uefi::Handle, system_table: uefi::table::SystemTable<uefi:
             .unwrap()
     });
     backtrace::init();
+    panic::catch_unwind_with_default_handler(init);
+    unsafe { SYSTEM_TABLE.as_mut().unwrap() }.boot_services().stall(100_000_000);
+    uefi::Status::SUCCESS
+}
+
+fn init() {
+    log::info!("Hello world!");
     let mut disk_sector_storages_partitions = Vec::new();
     for device in [
         disk::Device::PrimaryMaster,
@@ -73,6 +79,4 @@ fn main(image_handle: uefi::Handle, system_table: uefi::table::SystemTable<uefi:
     let session = ext2::Session::new(&root_disk_sector_storage_partition);
     logger::dbg!(session.read_dir(2));
     logger::dbg!(String::from_utf8_lossy(&session.read_regular_file_range(12, 0..5)));
-    system_table.boot_services().stall(100_000_000);
-    uefi::Status::SUCCESS
 }
