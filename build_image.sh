@@ -3,7 +3,7 @@
 fast=0
 export_root=0
 
-while getopts "f" opt; do
+while getopts "fr" opt; do
   case "$opt" in
     f)
       fast=1

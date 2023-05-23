@@ -2,6 +2,7 @@
 #![feature(format_args_nl)]
 #![feature(let_chains)]
 #![feature(never_type)]
+#![feature(int_roundings)]
 #![no_std]
 #![no_main]
 
@@ -11,14 +12,16 @@ mod allocator;
 mod backtrace;
 mod disk;
 mod ext2;
+mod fs;
 mod guid;
 mod logger;
 mod panic;
 mod partitions;
 mod sector_storage;
 
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 
+use fs::Session;
 use sector_storage::SectorStorage;
 
 include!("../../bootloader/src/common.rs");
@@ -67,9 +70,9 @@ fn main(image_handle: uefi::Handle, system_table: uefi::table::SystemTable<uefi:
         .find(|(_, partition)| partition.type_id == guid::TYPE_ID_LINUX && partition.name.as_deref() == Some("kernel_root"))
         .expect("no root partition found");
     log::debug!("Root disk sector storage and partition: {:?}", root_disk_sector_storage_partition);
-    let mounted = ext2::Mounted::new(&root_disk_sector_storage_partition);
-    log::debug!("{:?}", mounted);
-    mounted.write_superblock_copies();
+    let session = ext2::Session::new(&root_disk_sector_storage_partition);
+    logger::dbg!(session.read_dir(2));
+    logger::dbg!(String::from_utf8_lossy(&session.read_regular_file_range(12, 0..5)));
     system_table.boot_services().stall(100_000_000);
     uefi::Status::SUCCESS
 }
