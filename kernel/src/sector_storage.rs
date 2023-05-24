@@ -25,3 +25,17 @@ pub trait SectorStorage {
         }
     }
 }
+
+impl<SS: SectorStorage> SectorStorage for &SS {
+    fn sector_count(&self) -> u64 {
+        (*self).sector_count()
+    }
+
+    fn read_sector(&self, sector_index: u64) -> [u8; SECTOR_SIZE as usize] {
+        (*self).read_sector(sector_index)
+    }
+
+    fn write_sector(&self, sector_index: u64, sector_data: [u8; SECTOR_SIZE as usize]) {
+        (*self).write_sector(sector_index, sector_data)
+    }
+}

@@ -9,7 +9,7 @@ forced-target = "x86_64-unknown-uefi"
 [dependencies]
 uefi = "0.21.0"
 uefi-services = "0.18.0"
-elf = { version = "0.7.2", default-features = false      }
+elf = { version = "0.7.2", default-features = false }
 
 [[bin]]
 name = "bootloader"

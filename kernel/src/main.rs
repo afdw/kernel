@@ -3,6 +3,7 @@
 #![feature(let_chains)]
 #![feature(never_type)]
 #![feature(int_roundings)]
+#![feature(allocator_api)]
 #![no_std]
 #![no_main]
 
@@ -10,24 +11,49 @@ extern crate alloc;
 
 mod allocator;
 mod backtrace;
-mod disk;
+mod discovery;
 mod ext2;
 mod fs;
 mod guid;
 mod logger;
 mod panic;
 mod partitions;
+mod pata;
 mod sector_storage;
+mod virtio_blk;
 
 use alloc::{string::String, vec::Vec};
-
 use fs::Session;
+
 use sector_storage::SectorStorage;
 
 include!("../../bootloader/src/common.rs");
 
 static mut SYSTEM_TABLE: Option<uefi::table::SystemTable<uefi::table::Boot>> = None;
 static BOOTLOADER_PROTOCOL: spin::Once<BootloaderProtocol> = spin::Once::new();
+
+fn init() {
+    log::info!("Hello world!");
+    let discovery_result = discovery::discover();
+    let mut disk_sector_storages_partitions = Vec::new();
+    for disk_device_storage in &discovery_result.disk_sector_storages {
+        let partition_table = partitions::read_partition_table(&disk_device_storage);
+        log::debug!("Partition table: {:?}", partition_table);
+        if let Some(partition_table) = partition_table {
+            for partition in partition_table.partitions {
+                disk_sector_storages_partitions.push((disk_device_storage, partition));
+            }
+        }
+    }
+    let root_disk_sector_storage_partition = disk_sector_storages_partitions
+        .into_iter()
+        .find(|(_, partition)| partition.type_id == guid::TYPE_ID_LINUX && partition.name.as_deref() == Some("kernel_root"))
+        .expect("no root partition found");
+    log::debug!("Root disk sector storage and partition: {:?}", root_disk_sector_storage_partition);
+    let session = ext2::Session::new(&root_disk_sector_storage_partition);
+    logger::dbg!(session.read_dir(2));
+    logger::dbg!(String::from_utf8_lossy(&session.read_regular_file_range(12, 0..5)));
+}
 
 #[uefi::entry]
 fn main(image_handle: uefi::Handle, system_table: uefi::table::SystemTable<uefi::table::Boot>) -> uefi::Status {
@@ -43,40 +69,6 @@ fn main(image_handle: uefi::Handle, system_table: uefi::table::SystemTable<uefi:
     });
     backtrace::init();
     panic::catch_unwind_with_default_handler(init);
-    unsafe { SYSTEM_TABLE.as_mut().unwrap() }.boot_services().stall(100_000_000);
+    system_table.boot_services().stall(100_000_000);
     uefi::Status::SUCCESS
-}
-
-fn init() {
-    log::info!("Hello world!");
-    let mut disk_sector_storages_partitions = Vec::new();
-    for device in [
-        disk::Device::PrimaryMaster,
-        disk::Device::PrimarySlave,
-        disk::Device::SecondaryMaster,
-        disk::Device::SecondarySlave,
-    ] {
-        match disk::DiskSectorStorage::new(device) {
-            None => log::debug!("Disk {:?}: none", device),
-            Some(disk_device_storage) => {
-                log::debug!("Disk {:?}: {} sectors", device, disk_device_storage.sector_count());
-                log::debug!("Second sector: {}", pretty_hex::pretty_hex(&&disk_device_storage.read_sector(1)[..128]));
-                let partition_table = partitions::read_partition_table(&disk_device_storage);
-                log::debug!("Partition table: {:?}", partition_table);
-                if let Some(partition_table) = partition_table {
-                    for partition in partition_table.partitions {
-                        disk_sector_storages_partitions.push((disk_device_storage, partition));
-                    }
-                }
-            }
-        }
-    }
-    let root_disk_sector_storage_partition = disk_sector_storages_partitions
-        .into_iter()
-        .find(|(_, partition)| partition.type_id == guid::TYPE_ID_LINUX && partition.name.as_deref() == Some("kernel_root"))
-        .expect("no root partition found");
-    log::debug!("Root disk sector storage and partition: {:?}", root_disk_sector_storage_partition);
-    let session = ext2::Session::new(&root_disk_sector_storage_partition);
-    logger::dbg!(session.read_dir(2));
-    logger::dbg!(String::from_utf8_lossy(&session.read_regular_file_range(12, 0..5)));
 }

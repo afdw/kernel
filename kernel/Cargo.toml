@@ -21,6 +21,8 @@ gimli = { version = "0.27.2", default-features = false, features = ["read", "end
 unwinding = { version = "0.1.7", default-features = false, features = ["unwinder", "fde-static", "dwarf-expr", "personality", "panicking"] }
 addr2line = { version = "0.20.0", default-features = false, features = ["object"] }
 rustc-demangle = "0.1.23"
+acpi = "4.1.1"
+virtio-drivers = "0.4.0"
 
 [[bin]]
 name = "kernel"

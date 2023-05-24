@@ -58,6 +58,9 @@ impl log::Log for Logger {
     }
 
     fn log(&self, record: &log::Record) {
+        if record.file().is_some() && record.file().unwrap().contains(".cargo/registry") {
+            return;
+        }
         use uefi::proto::console::text::Color;
         unsafe {
             super::SYSTEM_TABLE

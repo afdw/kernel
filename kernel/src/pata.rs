@@ -67,6 +67,10 @@ impl Device {
 
 pub fn identify(device: Device) -> Option<u64> {
     unsafe {
+        let status = x86::io::inb(device.port_base_io() + PORT_OFFSET_STATUS);
+        if status == 0xFF {
+            return None; // disconnected
+        }
         x86::io::outb(device.port_base_control() + PORT_OFFSET_CONTROL, CONTROL_BIT_NIEN); // do not send IRQs
         x86::io::outb(device.port_base_io() + PORT_OFFSET_DRIVE_HEAD, 0xA0 | device.device_bit());
         x86::io::outb(device.port_base_io() + PORT_OFFSET_SECTOR_COUNT, 0);
