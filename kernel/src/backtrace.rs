@@ -73,9 +73,10 @@ pub fn symbolize_program_counter(program_counter: usize) -> String {
 }
 
 pub fn symbolize_backtrace(frame_program_counters: &[usize]) -> String {
+    use core::fmt::Write;
     let mut output = String::new();
     for (frame_index, &frame_program_counter) in frame_program_counters.iter().enumerate() {
-        output += &format!("{}. {}\n", frame_index, symbolize_program_counter(frame_program_counter));
+        writeln!(&mut output, "{}. {}", frame_index, symbolize_program_counter(frame_program_counter)).unwrap();
     }
     output
 }

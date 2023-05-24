@@ -13,6 +13,7 @@ mod allocator;
 mod backtrace;
 mod discovery;
 mod ext2;
+mod formatting;
 mod fs;
 mod guid;
 mod logger;
@@ -20,11 +21,13 @@ mod panic;
 mod partitions;
 mod pata;
 mod sector_storage;
+mod serial;
 mod virtio_blk;
 
 use alloc::{string::String, vec::Vec};
-use fs::Session;
+use core::fmt::Write;
 
+use fs::Session;
 use sector_storage::SectorStorage;
 
 include!("../../bootloader/src/common.rs");
@@ -33,6 +36,8 @@ static mut SYSTEM_TABLE: Option<uefi::table::SystemTable<uefi::table::Boot>> = N
 static BOOTLOADER_PROTOCOL: spin::Once<BootloaderProtocol> = spin::Once::new();
 
 fn init() {
+    serial::init();
+    logger::init();
     log::info!("Hello world!");
     let discovery_result = discovery::discover();
     let mut disk_sector_storages_partitions = Vec::new();
@@ -56,11 +61,11 @@ fn init() {
 }
 
 #[uefi::entry]
-fn main(image_handle: uefi::Handle, system_table: uefi::table::SystemTable<uefi::table::Boot>) -> uefi::Status {
+fn main(image_handle: uefi::Handle, mut system_table: uefi::table::SystemTable<uefi::table::Boot>) -> uefi::Status {
     unsafe {
         SYSTEM_TABLE = Some(system_table.unsafe_clone());
     }
-    logger::init();
+    system_table.stdout().write_fmt(format_args!("Kernel start")).unwrap();
     BOOTLOADER_PROTOCOL.call_once(|| {
         *system_table
             .boot_services()

@@ -1,15 +1,13 @@
 use core::fmt::Write;
 
-pub fn _print(args: core::fmt::Arguments) {
-    unsafe {
-        crate::SYSTEM_TABLE.as_mut().unwrap().stdout().write_fmt(args).unwrap();
-    }
+pub fn print_args(args: core::fmt::Arguments) {
+    super::serial::Serial.write_fmt(args).unwrap()
 }
 
 #[allow(unused_macros)]
 macro_rules! print {
     ($($arg:tt)*) => {{
-        $crate::logger::_print(core::format_args!($($arg)*));
+        $crate::logger::print_args(core::format_args!($($arg)*));
     }};
 }
 
@@ -22,7 +20,7 @@ macro_rules! println {
         $crate::logger::print!("\n")
     };
     ($($arg:tt)*) => {{
-        $crate::logger::_print(core::format_args_nl!($($arg)*));
+        $crate::logger::print_args(core::format_args_nl!($($arg)*));
     }};
 }
 
@@ -61,24 +59,20 @@ impl log::Log for Logger {
         if record.file().is_some() && record.file().unwrap().contains(".cargo/registry") {
             return;
         }
-        use uefi::proto::console::text::Color;
-        unsafe {
-            super::SYSTEM_TABLE
-                .as_mut()
-                .unwrap()
-                .stdout()
-                .set_color(
-                    match record.level() {
-                        log::Level::Error => Color::Red,
-                        log::Level::Warn => Color::Yellow,
-                        log::Level::Info => Color::White,
-                        log::Level::Debug => Color::LightGray,
-                        log::Level::Trace => Color::DarkGray,
-                    },
-                    Color::Black,
-                )
-                .unwrap();
-        }
+        print!(
+            "{}",
+            super::formatting::Style {
+                reset: false,
+                foreground_color: match record.level() {
+                    log::Level::Error => Some(super::formatting::Color::Red),
+                    log::Level::Warn => Some(super::formatting::Color::Yellow),
+                    log::Level::Info => Some(super::formatting::Color::BrightWhite),
+                    log::Level::Debug => Some(super::formatting::Color::White),
+                    log::Level::Trace => Some(super::formatting::Color::BrightBlack),
+                },
+                background_color: None,
+            }
+        );
         println!(
             "[{} {}:{}] {}",
             record.level(),
@@ -86,6 +80,7 @@ impl log::Log for Logger {
             record.line().unwrap_or(0),
             record.args()
         );
+        print!("{}", super::formatting::Style::RESET);
     }
 
     fn flush(&self) {}
