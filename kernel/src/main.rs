@@ -17,6 +17,7 @@ mod display;
 mod ext2;
 mod formatting;
 mod fs;
+mod gop;
 mod guid;
 mod logger;
 mod panic;
@@ -75,6 +76,17 @@ fn main(image_handle: uefi::Handle, mut system_table: uefi::table::SystemTable<u
     unsafe {
         SYSTEM_TABLE = Some(system_table.unsafe_clone());
     }
+    let gop_handle = system_table
+        .boot_services()
+        .get_handle_for_protocol::<uefi::proto::console::gop::GraphicsOutput>()
+        .unwrap();
+    let gop = system_table
+        .boot_services()
+        .open_protocol_exclusive::<uefi::proto::console::gop::GraphicsOutput>(gop_handle)
+        .unwrap();
+    let x = gop.current_mode_info();
+    drop(gop);
+    system_table.stdout().write_fmt(format_args!("{:?}\n", x)).unwrap();
     system_table.stdout().write_fmt(format_args!("Kernel start")).unwrap();
     BOOTLOADER_PROTOCOL.call_once(|| {
         *system_table

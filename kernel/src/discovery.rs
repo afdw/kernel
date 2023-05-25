@@ -35,26 +35,31 @@ fn find_mmconfig_base(acpi_tables: &acpi::AcpiTables<AcpiHandler>) -> Option<*mu
     Some(mcfg_entries.iter().find(|mcfg_entry| mcfg_entry.pci_segment_group == 0)?.base_address as _)
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum Display {
+    Gop(super::gop::Display),
     VirtioGpu(super::virtio_gpu::Display),
 }
 
 impl super::display::Display for Display {
     fn reinitialize_if_needed(&self) {
         match self {
+            Display::Gop(display) => display.reinitialize_if_needed(),
             Display::VirtioGpu(display) => display.reinitialize_if_needed(),
         }
     }
 
     fn resolution(&self) -> (usize, usize) {
         match self {
+            Display::Gop(display) => display.resolution(),
             Display::VirtioGpu(display) => display.resolution(),
         }
     }
 
     fn update(&self, pixel_data: &[u32]) {
         match self {
+            Display::Gop(display) => display.update(pixel_data),
             Display::VirtioGpu(display) => display.update(pixel_data),
         }
     }
@@ -98,6 +103,11 @@ pub struct DiscoveryResult {
 
 pub fn discover() -> DiscoveryResult {
     let mut discovery_result = DiscoveryResult::default();
+    log::debug!("UEFI GOP");
+    if let Some(display) = super::gop::Display::new() {
+        log::info!("--> display of resolution {:?}", super::display::Display::resolution(&display));
+        discovery_result.displays.push(Display::Gop(display));
+    }
     for device in [
         super::pata::Device::PrimaryMaster,
         super::pata::Device::PrimarySlave,

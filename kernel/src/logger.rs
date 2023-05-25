@@ -5,27 +5,21 @@ static mut CONSOLE: Option<super::console::Console> = None;
 
 pub fn print_args(args: core::fmt::Arguments) {
     super::serial::Serial.write_fmt(args).unwrap();
-    match unsafe { super::DISPLAY.take() } {
-        Some(display) => {
-            let console = unsafe { CONSOLE.as_mut().unwrap() };
-            console.write_fmt(args).unwrap();
-            display.reinitialize_if_needed();
-            console.render(&display);
-            unsafe { super::DISPLAY = Some(display) };
-        }
-        None => (),
+    if let Some(display) = unsafe { super::DISPLAY.take() } {
+        let console = unsafe { CONSOLE.as_mut().unwrap() };
+        console.write_fmt(args).unwrap();
+        display.reinitialize_if_needed();
+        console.render(&display);
+        unsafe { super::DISPLAY = Some(display) };
     }
 }
 
 pub fn update() {
-    match unsafe { super::DISPLAY.take() } {
-        Some(display) => {
-            let console = unsafe { CONSOLE.as_mut().unwrap() };
-            display.reinitialize_if_needed();
-            console.render(&display);
-            unsafe { super::DISPLAY = Some(display) };
-        }
-        None => (),
+    if let Some(display) = unsafe { super::DISPLAY.take() } {
+        let console = unsafe { CONSOLE.as_mut().unwrap() };
+        display.reinitialize_if_needed();
+        console.render(&display);
+        unsafe { super::DISPLAY = Some(display) };
     }
 }
 
