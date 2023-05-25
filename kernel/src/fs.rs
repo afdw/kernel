@@ -80,7 +80,7 @@ impl Mode {
     }
 
     pub fn file_type(self) -> FileType {
-        match self.intersection(Mode::from_bits_retain(0x0fff)) {
+        match self.difference(Mode::from_bits_retain(0x0fff)) {
             Mode::FIFO => FileType::Fifo,
             Mode::CHARACTER_DEVICE => FileType::CharacterDevice,
             Mode::DIR => FileType::Dir,

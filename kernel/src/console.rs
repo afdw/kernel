@@ -11,7 +11,7 @@ use embedded_graphics::{
 const FONT: embedded_graphics::mono_font::MonoFont<'_> = embedded_graphics::mono_font::ascii::FONT_10X20;
 const DEFAULT_STYLE: super::formatting::Style = super::formatting::Style {
     reset: false,
-    foreground_color: Some(super::formatting::Color::White),
+    foreground_color: Some(super::formatting::Color::BrightWhite),
     background_color: Some(super::formatting::Color::Black),
 };
 const DEFAULT_CHARACTER: char = ' ';

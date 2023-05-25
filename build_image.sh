@@ -31,6 +31,8 @@ sudo umount mnt
 ((!$fast)) && sudo mkfs.ext2 -q ${loop_device}p2
 ((!$fast)) && sudo mount ${loop_device}p2 mnt
 ((!$fast)) && sudo tee -a mnt/example <<< text > /dev/null
+((!$fast)) && sudo mkdir -p mnt/a/b/c <<< text > /dev/null
+((!$fast)) && sudo tee -a mnt/a/b/c/d <<< efgh > /dev/null
 ((!$fast)) && sudo umount mnt
 (($export_root)) && sudo dd if=${loop_device}p2 of=kernel_root.img bs=64K status=none
 sudo losetup -D $loop_device
