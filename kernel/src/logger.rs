@@ -1,7 +1,32 @@
+use super::display::Display;
 use core::fmt::Write;
 
+static mut CONSOLE: Option<super::console::Console> = None;
+
 pub fn print_args(args: core::fmt::Arguments) {
-    super::serial::Serial.write_fmt(args).unwrap()
+    super::serial::Serial.write_fmt(args).unwrap();
+    match unsafe { super::DISPLAY.take() } {
+        Some(display) => {
+            let console = unsafe { CONSOLE.as_mut().unwrap() };
+            console.write_fmt(args).unwrap();
+            display.reinitialize_if_needed();
+            console.render(&display);
+            unsafe { super::DISPLAY = Some(display) };
+        }
+        None => (),
+    }
+}
+
+pub fn update() {
+    match unsafe { super::DISPLAY.take() } {
+        Some(display) => {
+            let console = unsafe { CONSOLE.as_mut().unwrap() };
+            display.reinitialize_if_needed();
+            console.render(&display);
+            unsafe { super::DISPLAY = Some(display) };
+        }
+        None => (),
+    }
 }
 
 #[allow(unused_macros)]
@@ -87,6 +112,7 @@ impl log::Log for Logger {
 }
 
 pub fn init() {
+    unsafe { CONSOLE = Some(super::console::Console::new()) };
     log::set_logger(&Logger).unwrap();
     log::set_max_level(log::STATIC_MAX_LEVEL);
 }

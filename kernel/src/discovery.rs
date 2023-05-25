@@ -35,6 +35,31 @@ fn find_mmconfig_base(acpi_tables: &acpi::AcpiTables<AcpiHandler>) -> Option<*mu
     Some(mcfg_entries.iter().find(|mcfg_entry| mcfg_entry.pci_segment_group == 0)?.base_address as _)
 }
 
+#[derive(Debug)]
+pub enum Display {
+    VirtioGpu(super::virtio_gpu::Display),
+}
+
+impl super::display::Display for Display {
+    fn reinitialize_if_needed(&self) {
+        match self {
+            Display::VirtioGpu(display) => display.reinitialize_if_needed(),
+        }
+    }
+
+    fn resolution(&self) -> (usize, usize) {
+        match self {
+            Display::VirtioGpu(display) => display.resolution(),
+        }
+    }
+
+    fn update(&self, pixel_data: &[u32]) {
+        match self {
+            Display::VirtioGpu(display) => display.update(pixel_data),
+        }
+    }
+}
+
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum DiskSectorStorage {
@@ -50,14 +75,14 @@ impl SectorStorage for DiskSectorStorage {
         }
     }
 
-    fn read_sector(&self, sector_index: u64) -> [u8; crate::sector_storage::SECTOR_SIZE as usize] {
+    fn read_sector(&self, sector_index: u64) -> [u8; super::sector_storage::SECTOR_SIZE as usize] {
         match self {
             DiskSectorStorage::Pata(disk_sector_storage) => disk_sector_storage.read_sector(sector_index),
             DiskSectorStorage::VirtioBlk(disk_sector_storage) => disk_sector_storage.read_sector(sector_index),
         }
     }
 
-    fn write_sector(&self, sector_index: u64, sector_data: [u8; crate::sector_storage::SECTOR_SIZE as usize]) {
+    fn write_sector(&self, sector_index: u64, sector_data: [u8; super::sector_storage::SECTOR_SIZE as usize]) {
         match self {
             DiskSectorStorage::Pata(disk_sector_storage) => disk_sector_storage.write_sector(sector_index, sector_data),
             DiskSectorStorage::VirtioBlk(disk_sector_storage) => disk_sector_storage.write_sector(sector_index, sector_data),
@@ -67,6 +92,7 @@ impl SectorStorage for DiskSectorStorage {
 
 #[derive(Debug, Default)]
 pub struct DiscoveryResult {
+    pub displays: Vec<Display>,
     pub disk_sector_storages: Vec<DiskSectorStorage>,
 }
 
@@ -112,6 +138,10 @@ pub fn discover() -> DiscoveryResult {
                         device_function.function,
                         device_function_info
                     );
+                    if let Some(display) = super::virtio_gpu::Display::new(&mut pci_root, device_function, device_function_info.clone()) {
+                        log::info!("--> display of resolution {:?}", super::display::Display::resolution(&display));
+                        discovery_result.displays.push(Display::VirtioGpu(display));
+                    }
                     if let Some(disk_sector_storage) = super::virtio_blk::DiskSectorStorage::new(&mut pci_root, device_function, device_function_info) {
                         log::info!("--> disk with {} sectors", disk_sector_storage.sector_count());
                         discovery_result.disk_sector_storages.push(DiskSectorStorage::VirtioBlk(disk_sector_storage));

@@ -11,7 +11,9 @@ extern crate alloc;
 
 mod allocator;
 mod backtrace;
+mod console;
 mod discovery;
+mod display;
 mod ext2;
 mod formatting;
 mod fs;
@@ -22,7 +24,9 @@ mod partitions;
 mod pata;
 mod sector_storage;
 mod serial;
+mod virtio;
 mod virtio_blk;
+mod virtio_gpu;
 
 use alloc::{string::String, vec::Vec};
 use core::fmt::Write;
@@ -34,12 +38,15 @@ include!("../../bootloader/src/common.rs");
 
 static mut SYSTEM_TABLE: Option<uefi::table::SystemTable<uefi::table::Boot>> = None;
 static BOOTLOADER_PROTOCOL: spin::Once<BootloaderProtocol> = spin::Once::new();
+static mut DISPLAY: Option<discovery::Display> = None;
 
 fn init() {
     serial::init();
     logger::init();
     log::info!("Hello world!");
-    let discovery_result = discovery::discover();
+    let mut discovery_result = discovery::discover();
+    let display = core::mem::take(&mut discovery_result.displays).into_iter().next().expect("no display found");
+    unsafe { DISPLAY = Some(display) };
     let mut disk_sector_storages_partitions = Vec::new();
     for disk_device_storage in &discovery_result.disk_sector_storages {
         let partition_table = partitions::read_partition_table(&disk_device_storage);
@@ -58,6 +65,9 @@ fn init() {
     let session = ext2::Session::new(&root_disk_sector_storage_partition);
     logger::dbg!(session.read_dir(2));
     logger::dbg!(String::from_utf8_lossy(&session.read_regular_file_range(12, 0..5)));
+    loop {
+        logger::update();
+    }
 }
 
 #[uefi::entry]

@@ -1,3 +1,5 @@
+use embedded_graphics::pixelcolor::Rgb888;
+
 #[derive(Clone, Copy, Debug)]
 pub enum Color {
     Black,
@@ -104,6 +106,30 @@ impl Color {
             Color::BrightWhite => 107,
         }
     }
+
+    pub fn rgb_888(self) -> Rgb888 {
+        fn rgb_888_from_code(raw_color: u32) -> Rgb888 {
+            Rgb888::new((raw_color >> 16) as u8, (raw_color >> 8) as u8, raw_color as u8)
+        }
+        match self {
+            Color::Black => rgb_888_from_code(0x000000),
+            Color::Red => rgb_888_from_code(0xcd0000),
+            Color::Green => rgb_888_from_code(0x00cd00),
+            Color::Yellow => rgb_888_from_code(0xcdcd00),
+            Color::Blue => rgb_888_from_code(0x0000cd),
+            Color::Magenta => rgb_888_from_code(0xcd00cd),
+            Color::Cyan => rgb_888_from_code(0x00cdcd),
+            Color::White => rgb_888_from_code(0xe5e5e5),
+            Color::BrightBlack => rgb_888_from_code(0x7f7f7f),
+            Color::BrightRed => rgb_888_from_code(0xff0000),
+            Color::BrightGreen => rgb_888_from_code(0x00ff00),
+            Color::BrightYellow => rgb_888_from_code(0xffff00),
+            Color::BrightBlue => rgb_888_from_code(0x5c5cff),
+            Color::BrightMagenta => rgb_888_from_code(0xff00ff),
+            Color::BrightCyan => rgb_888_from_code(0x00ffff),
+            Color::BrightWhite => rgb_888_from_code(0xffffff),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -119,6 +145,41 @@ impl Style {
         foreground_color: None,
         background_color: None,
     };
+
+    pub fn parse(style_str: &str) -> Option<Self> {
+        let style_str = style_str.strip_prefix("\u{1b}[")?;
+        let style_str = style_str.strip_suffix('m')?;
+        let mut style = Style {
+            reset: false,
+            foreground_color: None,
+            background_color: None,
+        };
+        for command_str in style_str.split(';') {
+            let command = command_str.parse().ok()?;
+            if command == 0 {
+                style.reset = true;
+            }
+            if let Some(foreground_color) = Color::from_ansi_foreground(command) {
+                style.foreground_color = Some(foreground_color);
+            }
+            if let Some(background_color) = Color::from_ansi_background(command) {
+                style.background_color = Some(background_color);
+            }
+        }
+        Some(style)
+    }
+
+    pub fn merge(self, other: Style, default: Style) -> Style {
+        if other.reset {
+            default
+        } else {
+            Style {
+                reset: false,
+                foreground_color: other.foreground_color.or(self.foreground_color),
+                background_color: other.background_color.or(self.background_color),
+            }
+        }
+    }
 }
 
 impl core::fmt::Display for Style {

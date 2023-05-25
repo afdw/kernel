@@ -1,41 +1,11 @@
-use core::{alloc::Allocator, cell::RefCell, fmt::Debug};
+use core::{cell::RefCell, fmt::Debug};
 use virtio_drivers::transport::Transport;
 
 use super::{sector_storage::SECTOR_SIZE, SectorStorage};
 
-struct Hal;
-
-unsafe impl virtio_drivers::Hal for Hal {
-    fn dma_alloc(pages: usize, _direction: virtio_drivers::BufferDirection) -> (virtio_drivers::PhysAddr, core::ptr::NonNull<u8>) {
-        let buffer = alloc::alloc::Global
-            .allocate_zeroed(core::alloc::Layout::from_size_align(pages * virtio_drivers::PAGE_SIZE, virtio_drivers::PAGE_SIZE).unwrap())
-            .unwrap()
-            .as_ptr() as *mut u8;
-        (buffer as usize, core::ptr::NonNull::new(buffer).unwrap())
-    }
-
-    unsafe fn dma_dealloc(_paddr: virtio_drivers::PhysAddr, vaddr: core::ptr::NonNull<u8>, pages: usize) -> i32 {
-        alloc::alloc::Global.deallocate(
-            vaddr,
-            core::alloc::Layout::from_size_align(pages * virtio_drivers::PAGE_SIZE, virtio_drivers::PAGE_SIZE).unwrap(),
-        );
-        0
-    }
-
-    unsafe fn mmio_phys_to_virt(paddr: virtio_drivers::PhysAddr, _size: usize) -> core::ptr::NonNull<u8> {
-        core::ptr::NonNull::new(paddr as *mut u8).unwrap()
-    }
-
-    unsafe fn share(buffer: core::ptr::NonNull<[u8]>, _direction: virtio_drivers::BufferDirection) -> virtio_drivers::PhysAddr {
-        buffer.as_ptr() as *mut u8 as usize
-    }
-
-    unsafe fn unshare(_paddr: virtio_drivers::PhysAddr, _buffer: core::ptr::NonNull<[u8]>, _direction: virtio_drivers::BufferDirection) {}
-}
-
 pub struct DiskSectorStorage {
     device_function: virtio_drivers::transport::pci::bus::DeviceFunction,
-    device: RefCell<virtio_drivers::device::blk::VirtIOBlk<Hal, virtio_drivers::transport::pci::PciTransport>>,
+    device: RefCell<virtio_drivers::device::blk::VirtIOBlk<super::virtio::Hal, virtio_drivers::transport::pci::PciTransport>>,
 }
 
 impl Debug for DiskSectorStorage {
@@ -58,9 +28,9 @@ impl DiskSectorStorage {
                     | virtio_drivers::transport::pci::bus::Command::MEMORY_SPACE
                     | virtio_drivers::transport::pci::bus::Command::BUS_MASTER,
             );
-            let mut transport = virtio_drivers::transport::pci::PciTransport::new::<Hal>(pci_root, device_function).ok()?;
+            let mut transport = virtio_drivers::transport::pci::PciTransport::new::<super::virtio::Hal>(pci_root, device_function).ok()?;
             transport.set_status(virtio_drivers::transport::DeviceStatus::empty());
-            let device = virtio_drivers::device::blk::VirtIOBlk::<Hal, _>::new(transport).ok()?;
+            let device = virtio_drivers::device::blk::VirtIOBlk::<super::virtio::Hal, _>::new(transport).ok()?;
             Some(DiskSectorStorage {
                 device_function,
                 device: RefCell::new(device),
